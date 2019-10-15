@@ -1,0 +1,23 @@
+name: Build and Test
+on:   [push]
+jobs:
+
+  build:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Checkout source
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 1
+
+    - name: Create ci-builder image
+      run: make ci-builder-image
+
+    - name: Build
+      run: make as-ci target=go-install
+
+    - name: Test
+      run: make as-ci target=go-test-ci
+
