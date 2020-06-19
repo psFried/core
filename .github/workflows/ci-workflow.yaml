@@ -1,6 +1,7 @@
 name: Gazette Continuous Integration
 
-on: pull_request
+# TODO: change to pull_request once things are working
+on: push
 
 jobs:
   test:
