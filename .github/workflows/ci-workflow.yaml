@@ -5,6 +5,7 @@ on: push
 
 jobs:
   test:
+    runs-on: ubuntu-18.04
     container: 
       image: gazette/ci-builder:20200421
       env:
