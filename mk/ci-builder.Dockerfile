@@ -62,4 +62,3 @@ RUN curl -L -o /tmp/etcd.tgz \
  && rm /tmp/etcd.tgz \
  && etcd --version
 
-WORKDIR /gazette
