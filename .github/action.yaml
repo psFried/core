@@ -6,7 +6,7 @@ inputs:
     required: true
 runs:
   using: 'docker'
-  image: '../../mk/ci-builder.Dockerfile'
+  image: '../mk/ci-builder.Dockerfile'
   args:
     - make
     - ${{ inputs.make-target }}
