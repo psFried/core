@@ -25,6 +25,6 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v2
       - name: 'Install'
-        uses: './.github/actions/gazette-build-action.yaml'
+        uses: './mk/'
         with:
           make-target: 'go-install'
