@@ -26,3 +26,7 @@ jobs:
         uses: './mk/'
         with:
           make-target: 'go-install'
+      - name: 'Test'
+        uses: './mk/'
+        with:
+          make-target: 'go-test-ci'
