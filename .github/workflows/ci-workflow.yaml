@@ -13,15 +13,12 @@ env:
   ROCKSDB_VERSION: 6.7.3
   GOPATH: ${{ github.workspace }}/.build/go-path/
 
-defaults:
-  runs-on: ubuntu-18.04
-  container:
-    image: gazette/ci-builder:20200421
-
-
 
 jobs:
   debug:
+    runs-on: ubuntu-18.04
+    container:
+      image: gazette/ci-builder:20200421
     steps:
       - name: 'Print event info'
         run: |
@@ -32,6 +29,9 @@ jobs:
           echo "nproc=$(nproc)"
           
   build:
+    runs-on: ubuntu-18.04
+    container:
+      image: gazette/ci-builder:20200421
     needs: debug
     steps:
       - name: 'Checkout'
@@ -62,6 +62,9 @@ jobs:
         run: "make go-test-ci"
 
   release:
+    runs-on: ubuntu-18.04
+    container:
+      image: gazette/ci-builder:20200421
     needs: [debug, build]
     #if: ${{ github.event_name }} == 'release'
 
