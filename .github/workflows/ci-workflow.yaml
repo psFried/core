@@ -37,6 +37,18 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v2
 
+      - name: 'Print Debug Info'
+        run: |
+          echo -e "*************** \n\n RUNNING BUILD \n\n *********************"
+          echo "GOPATH env var =$GOPATH"
+          echo "GOPATH expr = ${{ env.GOPATH }}"
+          ls -al $GOPATH || echo "no GOPATH dir found"
+          echo "ls of bin"
+          ls -al ${{ env.GPPATH }}/bin || echo "no bin/ dir found"
+          echo "ls of pkg/"
+          ls -al ${{ env.GPPATH }}/pkg || echo "no pkg/ dir found"
+
+
         # The 'c<n>' in these Cache steps is just for changing the cache key so that
         # we can manually invalidate the cache if we need
       - name: 'RocksDB Cache'
@@ -59,7 +71,21 @@ jobs:
         run: "make go-install"
 
       - name: 'Test'
-        run: "make go-test-ci"
+        # TODO: change target to 'go-test-ci' before this is merged
+        run: "make go-test-fast"
+
+      - name: 'Upload gazette Binary'
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'gazette-binaries'
+          path: "${{ env.GOPATH }}/bin/gazette"
+
+      - name: 'Upload gazctl Binary'
+        uses: actions/upload-artifact@v2
+        with:
+          name: 'gazette-binaries'
+          path: "${{ env.GOPATH }}/bin/gazctl"
+
 
   release:
     runs-on: ubuntu-18.04
@@ -69,13 +95,23 @@ jobs:
     #if: ${{ github.event_name }} == 'release'
 
     steps:
+      - name: 'Download Gazette Artifact'
+        uses: actions/download-artifact@v2
+        with:
+          name: 'gazette-binaries'
+
       - name: 'Placeholder'
         run: |
           echo -e "*************** \n\n RUNNING RELEASE \n\n *********************"
-          echo -e "GOPATH=$GOPATH"
+          echo "GOPATH env var =$GOPATH"
+          echo "GOPATH expr = ${{ env.GOPATH }}"
           ls -al $GOPATH || echo "no GOPATH dir found"
           echo "ls of bin"
           ls -al ${{ env.GPPATH }}/bin || echo "no bin/ dir found"
           echo "ls of pkg/"
           ls -al ${{ env.GPPATH }}/pkg || echo "no pkg/ dir found"
+          echo "ls of ."
+          ls -al
+          echo "ls of gazette-binaries"
+          ls -al gazette-binaries/ || echo "no gazette-binaries dir found"
 
