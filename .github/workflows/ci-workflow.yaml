@@ -6,9 +6,22 @@ on:
   release:
     types: [created]
 
+env:
+  # TODO: see which of these env vars we still need on GH Actions
+  # RocksDB version to build. Keep in sync with mk/config.mk
+  # Also be sure to update the save_cache step below.
+  ROCKSDB_VERSION: 6.7.3
+  GOPATH: ${{ github.workspace }}/.build/go-path/
+
+defaults:
+  runs-on: ubuntu-18.04
+  container:
+    image: gazette/ci-builder:20200421
+
+
+
 jobs:
   debug:
-    runs-on: ubuntu-18.04
     steps:
       - name: 'Print event info'
         run: |
@@ -19,21 +32,7 @@ jobs:
           echo "nproc=$(nproc)"
           
   build:
-    runs-on: ubuntu-18.04
     needs: debug
-    container:
-      image: gazette/ci-builder:20200421
-      env:
-        # TODO: see which of these env vars we still need on GH Actions
-        # RocksDB version to build. Keep in sync with mk/config.mk
-        # Also be sure to update the save_cache step below.
-        ROCKSDB_VERSION: 6.7.3
-        # `nproc` on CircleCI docker runners returns the number of host cores,
-        # not provisioned cores (eg, 36 cores when only 2 are available).
-        #NPROC: 2
-        # Same issue with GOMAXPROCS.
-        #GOMAXPROCS: 2
-
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2
@@ -50,7 +49,7 @@ jobs:
         uses: actions/cache@v2
         with:
           key: go-mod-c1-${{ hashFiles('go.sum') }}
-          path: "~/go/pkg"
+          path: "${{ env.GOPATH }}/pkg"
           # If we don't have a cached directory that matches the hash exactly,
           # then this will allow a non-matching directory to be pulled in. This is safe
           # because go will use its own finer-grained cache invalidation logic
@@ -63,28 +62,13 @@ jobs:
         run: "make go-test-ci"
 
   release:
-    runs-on: ubuntu-18.04
     needs: [debug, build]
-    if: ${{ github.event_name }} == 'release'
-    container:
-      image: gazette/ci-builder:20200421
-      env:
-        # TODO: see which of these env vars we still need on GH Actions
-        # RocksDB version to build. Keep in sync with mk/config.mk
-        # Also be sure to update the save_cache step below.
-        ROCKSDB_VERSION: 6.7.3
-        # `nproc` on CircleCI docker runners returns the number of host cores,
-        # not provisioned cores (eg, 36 cores when only 2 are available).
-        NPROC: 2
-        # Same issue with GOMAXPROCS.
-        GOMAXPROCS: 2
+    #if: ${{ github.event_name }} == 'release'
 
     steps:
       - name: 'Placeholder'
         run: |
           echo -e "*************** \n\n RUNNING RELEASE \n\n *********************"
-          echo "ls ~/go/bin"
-          ls -al ~/go/bin
-          echo "ls ~/go/pkg"
-          ls -al ~/go/pkg
+          ls -al ${{ env.GPPATH }}/bin
+          ls -al ${{ env.GPPATH }}/pkg
 
