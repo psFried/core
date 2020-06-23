@@ -1,7 +1,10 @@
 name: Gazette Continuous Integration
 
 # TODO: change to pull_request once things are working
-on: [push, release]
+on:
+  push: {}
+  release:
+    types: [created]
 
 jobs:
   debug:
@@ -12,63 +15,61 @@ jobs:
           echo event_name=${{ github.event_name }};
           echo "Event Json: " 
           echo '${{ toJson(github.event) }}'
+          echo "ENV: NPROC=$NPROC"
+          echo "nproc=$(nproc)"
           
-  test:
+  build:
     runs-on: ubuntu-18.04
     needs: debug
     container:
       image: gazette/ci-builder:20200421
       env:
         # TODO: see which of these env vars we still need on GH Actions
-        # Instruct the go tool to place the module cache under the working
-        # directory (~/project)
-        GOPATH: /root/project/.build/go-path
         # RocksDB version to build. Keep in sync with mk/config.mk
         # Also be sure to update the save_cache step below.
         ROCKSDB_VERSION: 6.7.3
         # `nproc` on CircleCI docker runners returns the number of host cores,
         # not provisioned cores (eg, 36 cores when only 2 are available).
-        NPROC: 2
+        #NPROC: 2
         # Same issue with GOMAXPROCS.
-        GOMAXPROCS: 2
+        #GOMAXPROCS: 2
 
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2
 
+        # The 'c<n>' in these Cache steps is just for changing the cache key so that
+        # we can manually invalidate the cache if we need
       - name: 'RocksDB Cache'
         uses: actions/cache@v2
         with:
-          key: rocksdb-${{ hashFiles('.build/rocksdb-v*/librocksdb.so') }}
+          key: rocksdb-c1-${{ env.ROCKSDB_VERSION }}
           path: ".build/rocksdb-v${{ env.ROCKSDB_VERSION }}"
 
       - name: 'Go Module Cache'
         uses: actions/cache@v2
         with:
-          key: go-mod-v1-${{ hashFiles('go.sum') }}
-          path: ".build/go-path/pkg"
+          key: go-mod-c1-${{ hashFiles('go.sum') }}
+          path: "~/go/pkg"
           # If we don't have a cached directory that matches the hash exactly,
           # then this will allow a non-matching directory to be pulled in. This is safe
           # because go will use its own finer-grained cache invalidation logic
-          restore-keys: "go-mod-v1-"
+          restore-keys: "go-mod-c1-"
 
       - name: 'Install'
         run: "make go-install"
 
       - name: 'Test'
-        run: "make go-test-ci"
+        run: "make go-build-ci"
 
   release:
     runs-on: ubuntu-18.04
-    needs: debug
+    needs: [debug, build]
     if: ${{ github.event_name }} == 'release'
     container:
       image: gazette/ci-builder:20200421
       env:
         # TODO: see which of these env vars we still need on GH Actions
-        # Instruct the go tool to place the module cache under the working
-        # directory (~/project)
-        GOPATH: /root/project/.build/go-path
         # RocksDB version to build. Keep in sync with mk/config.mk
         # Also be sure to update the save_cache step below.
         ROCKSDB_VERSION: 6.7.3
@@ -82,4 +83,8 @@ jobs:
       - name: 'Placeholder'
         run: |
           echo -e "*************** \n\n RUNNING RELEASE \n\n *********************"
+          echo "ls ~/go/bin"
+          ls -al ~/go/bin
+          echo "ls ~/go/pkg"
+          ls -al ~/go/pkg
 
