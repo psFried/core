@@ -72,6 +72,10 @@ jobs:
       - name: 'Placeholder'
         run: |
           echo -e "*************** \n\n RUNNING RELEASE \n\n *********************"
-          ls -al ${{ env.GPPATH }}/bin
-          ls -al ${{ env.GPPATH }}/pkg
+          echo -e "GOPATH=$GOPATH"
+          ls -al $GOPATH || echo "no GOPATH dir found"
+          echo "ls of bin"
+          ls -al ${{ env.GPPATH }}/bin || echo "no bin/ dir found"
+          echo "ls of pkg/"
+          ls -al ${{ env.GPPATH }}/pkg || echo "no pkg/ dir found"
 
