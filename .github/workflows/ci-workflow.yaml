@@ -60,7 +60,7 @@ jobs:
         run: "make go-install"
 
       - name: 'Test'
-        run: "make go-build-ci"
+        run: "make go-test-ci"
 
   release:
     runs-on: ubuntu-18.04
