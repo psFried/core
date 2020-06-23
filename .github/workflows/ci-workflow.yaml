@@ -1,10 +1,7 @@
 name: Gazette Continuous Integration
 
 # TODO: change to pull_request once things are working
-on:
-  push: {}
-  release:
-    types: [ created, published, edited, prereleased ]
+on: [push, release]
 
 jobs:
   debug:
