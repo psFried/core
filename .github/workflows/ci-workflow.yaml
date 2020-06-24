@@ -23,10 +23,9 @@ jobs:
       - name: 'Print event info'
         run: |
           echo event_name=${{ github.event_name }};
+          echo "ref=${{ github.ref }}" 
           echo "Event Json: " 
           echo '${{ toJson(github.event) }}'
-          echo "ENV: NPROC=$NPROC"
-          echo "nproc=$(nproc)"
           
   build:
     runs-on: ubuntu-18.04
@@ -85,6 +84,20 @@ jobs:
         with:
           name: 'gazette-binaries'
           path: "${{ env.GOPATH }}/bin/gazctl"
+
+      - name: 'Build Gazette Docker Image'
+        run: "make ci-release-broker"
+
+      - name: 'Build Gazette Examples Docker Image'
+        run: "make ci-release-examples"
+
+      - name: 'Docker login'
+        run: |
+          docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}' gcr.io
+
+      - name: 'Push Docker Images'
+        run: |
+          make push-to-registry registry=gcr.io/helpful-kingdom-273219
 
 
   release:

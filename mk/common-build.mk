@@ -59,7 +59,7 @@ ci-release-%: $(ROCKSDIR)/librocksdb.so go-install $$($$@-targets)
 		${WORKDIR}/ci-release
 	docker build \
 		-f ${COREDIR}/mk/ci-release.Dockerfile \
-		-t $(subst -,/,$*):latest \
+		-t gazette/$(subst -,/,$*):latest \
 		${WORKDIR}/ci-release/
 
 # The librocksdb.so fetches and builds the version of RocksDB identified by 
