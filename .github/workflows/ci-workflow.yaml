@@ -1,9 +1,12 @@
 name: Gazette Continuous Integration
 
-# TODO: change to pull_request once things are working
+# TODO: maybe change to pull_request once things are working?
 on:
   push: {}
   release:
+    # only run when a release is created. Without this additional restriction, GH actions will
+    # trigger multiple runs for a single release, because it fires off separate events creating vs
+    # publishing the release.
     types: [created]
 
 env:
@@ -16,9 +19,8 @@ env:
 
 jobs:
   debug:
+    name: 'Print Event Info'
     runs-on: ubuntu-18.04
-    container:
-      image: gazette/ci-builder:20200421
     steps:
       - name: 'Print event info'
         run: |
@@ -31,37 +33,32 @@ jobs:
     runs-on: ubuntu-18.04
     container:
       image: gazette/ci-builder:20200421
-    needs: debug
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2
 
-        # this is needed because github actions only provide the fully-qualified name of the ref,
-        # which includes the 'refs/heads/' or 'refs/tags/' prefix. For release tags, we'll expect
-        # that the tag is a three part semantic version number, prefixed with a 'v'. We only want 
-        # the part that comes after the 'refs/tags/v', so this step will strip off those prefixes 
-        # and set and output called 'VERSION', which later steps can reference using the syntax: 
-        # '${{ steps.determine_version.outputs.VERSION }}'
-        # e.g. 'refs/tags/v0.87.3' becomes '0.87.3'
-        # For any refs (tags or branches) that do not match that format, we just strip off the 
-        # 'refs/[heads|tags]/' prefix and call it good.
-        # e.g. 'refs/heads/foo' becomes 'foo' and 'refs/tags/bar' becomes 'bar'
-        # This approach was taken from: https://github.community/t/how-to-get-just-the-tag-name/16241/9
       - name: 'Release Info'
         id: release_info
         run: |
-          ref_id=${{ github.ref }}
-          # the version regex doesn't need to be super sophisticated, since the goal is not to
-          # validate that this is a semantic version number. Rather the goal is just to see if 
-          # matches the typical pattern we use for release tags (e.g. v0.86.1). There are
-          version_regex='^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+'
-          if echo "$ref_id" | grep -qE "$version_regex"; then
-            version="${ref_id#refs/tags/v}"
+          is_release=${{ github.event_name == 'release' }}
+          if [[ "$is_release" == "true" ]]; then
+            tag_name=${{ github.event.release.tag_name }}
+            # the version regex doesn't need to be super sophisticated, since the goal is not to
+            # validate that this is a semantic version number. Rather the goal is just to see if 
+            # matches the typical pattern we use for release tags (e.g. v0.86.1). If it does, then
+            # we'll remove the 'v' prefix and use the remainder as the docker tag
+            # If a release tag does not match that format, then we'll just use the tag value as is
+            if echo "$tag_name" | grep -qE '^v[0-9]+\.[0-9]+\.[0-9]+'; then
+              version="${tag_name#v}"
+            else
+              version="${tag_name}"
+            fi
           else
-            version="${ref_id#refs/*/}"
+            # this is not a release, so we'll just use the git sha for the version number
+            version=${{ github.sha }}
           fi
           echo ::set-output name=VERSION::${version}
-          echo ::set-output name=IS_RELEASE::${{ github.event_name == 'release' }}
+          echo ::set-output name=IS_RELEASE::${is_release}
 
       - name: 'Print Debug Info'
         run: |
@@ -90,11 +87,11 @@ jobs:
           restore-keys: "go-mod-c1-"
 
       - name: 'Install'
-        run: "make go-install"
+        run: "make go-install VERSION=${{ steps.release_info.outputs.VERSION }}"
 
       - name: 'Test'
         # TODO: change target to 'go-test-ci' before this is merged
-        run: "make go-test-fast"
+        run: "make go-test-fast VERSION=${{ steps.release_info.outputs.VERSION }}"
 
       - name: 'Upload gazette Binary'
         uses: actions/upload-artifact@v2
@@ -108,48 +105,15 @@ jobs:
           name: 'gazette-binaries'
           path: "${{ env.GOPATH }}/bin/gazctl"
 
-      - name: 'Build Gazette Docker Image'
+      - name: 'Build Gazette Broker Docker Image'
         run: "make ci-release-gazette-broker"
 
       - name: 'Build Gazette Examples Docker Image'
         run: "make ci-release-gazette-examples"
 
-      - name: 'Docker login'
-        if: ${{ steps.release_info.outputs.IS_RELEASE }}
+      - name: 'Push Docker Images'
+        if: steps.release_info.outputs.IS_RELEASE == 'true'
         run: |
           docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}' ${{ secrets.DOCKER_REGISTRY }}
-
-      - name: 'Push Docker Images'
-        if: ${{ steps.release_info.outputs.IS_RELEASE }}
-        run: |
           make push-to-registry registry=${{ secrets.DOCKER_REGISTRY }} release_tag=${{ steps.release_info.outputs.VERSION }}
-
-
-  release:
-    runs-on: ubuntu-18.04
-    container:
-      image: gazette/ci-builder:20200421
-    needs: [debug, build]
-    #if: ${{ github.event_name }} == 'release'
-
-    steps:
-      - name: 'Download Gazette Artifact'
-        uses: actions/download-artifact@v2
-        with:
-          name: 'gazette-binaries'
-
-      - name: 'Placeholder'
-        run: |
-          echo -e "*************** \n\n RUNNING RELEASE \n\n *********************"
-          echo "GOPATH env var =$GOPATH"
-          echo "GOPATH expr = ${{ env.GOPATH }}"
-          ls -al $GOPATH || echo "no GOPATH dir found"
-          echo "ls of bin"
-          ls -al ${{ env.GPPATH }}/bin || echo "no bin/ dir found"
-          echo "ls of pkg/"
-          ls -al ${{ env.GPPATH }}/pkg || echo "no pkg/ dir found"
-          echo "ls of ."
-          ls -al
-          echo "ls of gazette-binaries"
-          ls -al gazette-binaries/ || echo "no gazette-binaries dir found"
 
