@@ -48,9 +48,9 @@ go-test-ci:   ${ROCKSDIR}/librocksdb.so ${protobuf-targets}
 
 # The ci-release-% implicit rule builds a Docker image named by the rule
 # stem, using binaries enumerated by a `-target` suffix. For example,
-# an invocation with `ci-release-examples` has a stem `examples`, and will
-# package binaries listed in `ci-release-examples-targets` into a docker
-# image named `examples:latest`.
+# an invocation with `ci-release-gazette-examples` has a stem `gazette-examples`, and will
+# package binaries listed in `ci-release-gazette-examples-targets` into a docker
+# image named `gazette/examples:latest`.
 .SECONDEXPANSION:
 ci-release-%: $(ROCKSDIR)/librocksdb.so go-install $$($$@-targets)
 	rm -rf ${WORKDIR}/ci-release
@@ -59,7 +59,7 @@ ci-release-%: $(ROCKSDIR)/librocksdb.so go-install $$($$@-targets)
 		${WORKDIR}/ci-release
 	docker build \
 		-f ${COREDIR}/mk/ci-release.Dockerfile \
-		-t gazette/$(subst -,/,$*):latest \
+		-t $(subst -,/,$*):latest \
 		${WORKDIR}/ci-release/
 
 # The librocksdb.so fetches and builds the version of RocksDB identified by 
