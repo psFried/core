@@ -44,6 +44,7 @@ RELEASE_TAG=latest
 push-to-registry:
 	docker tag gazette/broker:latest $(REGISTRY)/broker:$(RELEASE_TAG)
 	docker tag gazette/examples:latest $(REGISTRY)/examples:$(RELEASE_TAG)
+	@echo "Tagged $(REGISTRY)/broker:$(RELEASE_TAG) and $(REGISTRY)/examples:$(RELEASE_TAG), pushing..."
 	docker push $(REGISTRY)/broker:$(RELEASE_TAG)
 	docker push $(REGISTRY)/examples:$(RELEASE_TAG)
 

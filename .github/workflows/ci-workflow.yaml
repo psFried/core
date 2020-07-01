@@ -60,7 +60,7 @@ jobs:
             # This is not a release, so we'll use 'latest-dev-<sha>' for the version number
             # and just 'latest-dev' for the docker tag.
             sha=${{ github.sha }}
-            version="latest-dev-${sha:0:7}"
+            version="dev-${sha:0:7}"
             # If this is a master build, then we'll treat this as a release and just use the 
             # hard-coded tag as the docker image tag.
             if [[ '${{ github.ref }}' == 'refs/heads/master' ]]; then
@@ -138,5 +138,7 @@ jobs:
           docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}' ${{ secrets.DOCKER_REGISTRY }}
           make as-ci target=ci-release-gazette-examples VERSION=${{ steps.release_info.outputs.VERSION }}
           make as-ci target=ci-release-gazette-broker VERSION=${{ steps.release_info.outputs.VERSION }}
+          echo "Successfully built images, pushing"
           make push-to-registry REGISTRY=${{ secrets.DOCKER_REGISTRY }} RELEASE_TAG=${{ steps.release_info.outputs.DOCKER_TAG }}
+
 
