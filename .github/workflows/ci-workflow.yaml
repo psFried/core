@@ -29,6 +29,7 @@ jobs:
         # This is just really useful info to have when debugging issues with the action itself.
       - name: 'Print event info'
         run: |
+          docker version
           echo 'event_name=${{ github.event_name }}';
           echo 'ref=${{ github.ref }}';
           echo "Event Json: ";
