@@ -32,8 +32,8 @@ jobs:
           docker version
           echo 'event_name=${{ github.event_name }}';
           echo 'ref=${{ github.ref }}';
-          echo "Event Json: ";
-          echo '$GITHUB_EVENT_JSON'
+          echo 'docker config.json:'
+          cat "$HOME/.docker/config.json"
 
       - name: 'Checkout'
         uses: actions/checkout@v2
@@ -146,6 +146,8 @@ jobs:
       - name: 'Diagnostics'
         if: ${{ always() }}
         run: |
-          journalctl -u docker.service
+          echo "docker config.json after:"
+          cat "$HOME/.docker/config.json"
+          journalctl -u docker.service -S '15 min ago'
 
 
