@@ -134,6 +134,7 @@ jobs:
           asset_content_type: application/zip
 
       - name: 'Build and Push Docker Images'
+        id: 'docker_publish'
         if: steps.release_info.outputs.PUSH_IMAGES == 'true'
         run: |
           docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}' ${{ secrets.DOCKER_REGISTRY }}
@@ -141,5 +142,10 @@ jobs:
           make as-ci target=ci-release-gazette-broker VERSION=${{ steps.release_info.outputs.VERSION }}
           echo "Successfully built images, pushing"
           make push-to-registry REGISTRY=${{ secrets.DOCKER_REGISTRY }} RELEASE_TAG=${{ steps.release_info.outputs.DOCKER_TAG }}
+
+      - name: 'Diagnostics'
+        if: ${{ always() }}
+        run: |
+          journalctl -u docker.service
 
 
