@@ -133,6 +133,14 @@ jobs:
           upload_url: "${{ github.event.release.upload_url }}"
           asset_content_type: application/zip
 
+      - name: 'Docker Login'
+        if: steps.release_info.outputs.PUSH_IMAGES == 'true'
+        uses: azure/docker-login@v1
+        with:
+          login-server: '${{ secrets.DOCKER_REGISTRY }}'
+          username: '${{ secrets.DOCKER_USERNAME }}'
+          password: '${{ secrets.DOCKER_PASSWORD }}'
+
       - name: 'Build and Push Docker Images'
         id: 'docker_publish'
         if: steps.release_info.outputs.PUSH_IMAGES == 'true'
@@ -140,7 +148,6 @@ jobs:
           make as-ci target=ci-release-gazette-examples VERSION=${{ steps.release_info.outputs.VERSION }}
           make as-ci target=ci-release-gazette-broker VERSION=${{ steps.release_info.outputs.VERSION }}
           echo "Successfully built images, pushing"
-          docker login -u '${{ secrets.DOCKER_USERNAME }}' -p '${{ secrets.DOCKER_PASSWORD }}' ${{ secrets.DOCKER_REGISTRY }}
           make push-to-registry REGISTRY=${{ secrets.DOCKER_REGISTRY }} RELEASE_TAG=${{ steps.release_info.outputs.DOCKER_TAG }}
 
       - name: 'Diagnostics'
