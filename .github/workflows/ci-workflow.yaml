@@ -33,7 +33,7 @@ jobs:
           echo 'event_name=${{ github.event_name }}';
           echo 'ref=${{ github.ref }}';
           echo 'docker config.json:'
-          cat "$HOME/.docker/config.json"
+          cat "$HOME/.docker/config.json" || echo "no config.json found"
 
       - name: 'Checkout'
         uses: actions/checkout@v2
@@ -147,7 +147,7 @@ jobs:
         if: ${{ always() }}
         run: |
           echo "docker config.json after:"
-          cat "$HOME/.docker/config.json"
+          cat "$HOME/.docker/config.json" || echo "no config.json found"
           journalctl -u docker.service -S '15 min ago'
 
 
